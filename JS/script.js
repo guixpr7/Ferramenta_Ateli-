@@ -283,31 +283,3 @@ async function salvarAgendamento(dados) {
 
 
 
-// 👉 CONFIGURAÇÃO SUPABASE
-const SUPABASE_URL = "https://dwnrfbferkeeuovqalys.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3bnJmYmZlcmtlZXVvdnFhbHlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0OTE3MTgsImV4cCI6MjA3OTA2NzcxOH0.TA4s0cTByFcOExYVzK69F-9S-li-1fokOVdCtdVTCCk";
-
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// 👉 FORMULÁRIO
-document.getElementById("form-agendar").addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const nome = document.getElementById("nome").value;
-    const telefone = document.getElementById("telefone").value;
-    const dia = document.getElementById("dia").value;
-    const hora = document.getElementById("hora").value;
-
-    const { error } = await supabase
-        .from("agendamentos")
-        .insert([{ nome, telefone, dia, hora }]);
-
-    const msg = document.getElementById("msg");
-    if (error) {
-        msg.textContent = "Erro ao agendar!";
-        msg.style.color = "red";
-    } else {
-        msg.textContent = "Agendamento concluído!";
-        msg.style.color = "green";
-    }
-});
