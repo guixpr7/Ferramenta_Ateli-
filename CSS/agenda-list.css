@@ -1,0 +1,39 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f6f6f6;
+}
+
+header {
+    background: #c29ad9;
+    padding: 20px;
+    text-align: center;
+    color: white;
+}
+
+#lista-container {
+    width: 90%;
+    max-width: 900px;
+    margin: 30px auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #00000022;
+}
+
+.card {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+}
+
+.card h3 {
+    margin: 0;
+    color: #59316b;
+}
+
+.card p {
+    margin: 4px 0;
+}

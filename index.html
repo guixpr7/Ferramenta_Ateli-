@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ateliê Aurora — Agendamento</title>
+  <link rel="stylesheet" href="style.css" />
+
+      <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <!-- Logo SVG (substitua por <img src="sua-logo.png"> se preferir) -->
+      <div class="logo-wrap" aria-hidden="true">
+        <svg width="72" height="72" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logo Ateliê Aurora">
+          <circle cx="60" cy="60" r="58" fill="none" stroke="#333" stroke-opacity="0.18" stroke-width="2"/>
+          <g transform="translate(22,20)" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8c6 0 10 5 10 10 0 6-6 14-10 18-4-4-10-12-10-18 0-5 4-10 10-10z" />
+            <path d="M16 36c0 0 6-2 10 2" stroke-opacity="0.9"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="brand">
+        <h1>Ateliê Aurora</h1>
+        <p class="tagline">Vestidos & ajustes para noivas — elegância sob medida</p>
+      </div>
+
+      <a class="btn-whats" href="https://wa.me/5599999999999" target="_blank" rel="noopener">Contato: (99) 9 9999-9999</a>
+    </div>
+
+    <div class="hero">
+      <!-- Foto de casal (fonte: Unsplash). Se preferir usar sua imagem, troque o "background-image" no CSS ou substitua abaixo por <img>. -->
+    </div>
+  </header>
+
+  <main class="container">
+<section class="card schedule-card">
+  <h2>Agendamentos</h2>
+  <p class="muted">Escolha uma data nos calendários abaixo:</p>
+
+  <!-- Calendários -->
+  <div id="calendarContainer" class="calendar-wrapper"></div>
+
+  <!-- Legenda -->
+  <div class="legend-calendar">
+    <span class="legend-item">
+      <span class="legend-box free"></span>
+      Beige — disponível
+    </span>
+
+    <span class="legend-item">
+      <span class="legend-box booked"></span>
+      Vermelho — reservado
+    </span>
+  </div>
+
+  <!-- Painel de horários -->
+  <div id="hoursPanel" class="hours-panel">
+    <h3 id="selectedDayTitle"></h3>
+    <div id="hoursList" class="hours-grid"></div>
+    <button class="btn-voltar" onclick="closeHoursPanel()">Voltar</button>
+  </div>
+</section>
+
+      </p>
+
+    </section>
+
+    <section class="card contact-card">
+      <h3>Contato rápido</h3>
+      <p><strong>Telefone / WhatsApp:</strong> <a href="https://wa.me/5599999999999" target="_blank" rel="noopener">(99) 9 9999-9999</a></p>
+      <p><strong>Endereço:</strong> Rua das Flores, 123 — Batel</p>
+      <p><strong>Serviços:</strong> Ajustes, confecção sob medida, provas e reformas.</p>
+
+    </section>
+
+    <section class="card form-card">
+      <h2>Formulário de contato / pedido</h2>
+      <form id="contactForm" class="contact-form" autocomplete="on">
+        <div class="row">
+          <label>
+            Nome
+            <input type="text" id="name" required placeholder="Seu nome completo" />
+          </label>
+
+          <label>
+            Telefone / WhatsApp
+            <input type="tel" id="phone" required placeholder="(99) 9 9999-9999" />
+          </label>
+        </div>
+
+        <label>
+          Observações
+          <textarea id="message" rows="3" placeholder="Tipo de serviço, data do evento, etc."></textarea>
+        </label>
+
+        <div class="form-actions">
+          <button type="button" id="sendWhats" class="btn btn-outline">Enviar via WhatsApp</button>
+          <button type="submit" class="btn btn-primary">Enviar por e-mail</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div>
+        <h4>Ateliê Aurora</h4>
+        <p class="footer-desc">Especializados em vestidos de noiva sob medida e ajustes finos. Transformamos ideias em peças únicas para o seu grande dia.</p>
+      </div>
+
+      <div>
+        <p><strong>Endereço</strong><br>Rua das Flores, 123 — Batel</p>
+        <p><strong>Horario</strong><br>Seg–Sex: 09:00–18:00 • Sáb: 09:00–13:00</p>
+        <p><strong>Contato</strong><br><a href="https://wa.me/5599999999999" target="_blank" rel="noopener">(99) 9 9999-9999</a></p>
+      </div>
+
+      <div>
+        <p><strong>Siga-nos</strong></p>
+        <p class="socials">
+          <a href="#" aria-label="Instagram">Instagram</a> •
+          <a href="#" aria-label="Facebook">@Atelie_Aurora</a>
+        </p>
+      </div>
+    </div>
+
+    <div class="copyright">
+      © <span id="year"></span> Ateliê Aurora — Todos os direitos reservados
+    </div>
+  </footer>
+
+  <div id="bookingModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <h3 id="modalTitle"></h3>
+
+      <form id="bookingForm">
+        <label>Nome
+          <input type="text" id="mname" required />
+        </label>
+
+        <label>Telefone / WhatsApp
+          <input type="tel" id="mphone" required />
+        </label>
+
+        <label>Observações
+          <textarea id="mmsg" rows="2"></textarea>
+        </label>
+
+        <div class="modal-actions">
+          <button type="button" id="confirmBtn" class="btn btn-primary">Confirmar & enviar WhatsApp</button>
+          <button type="button" id="localBtn" class="btn btn-outline">Salvar localmente</button>
+          <button type="button" id="closeBtn" class="btn">Fechar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="JS/script.js"></script>
+</body>
+</html>
