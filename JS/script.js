@@ -2,7 +2,7 @@
    CONFIGURAÇÕES DO SISTEMA
 =========================================================== */
 const PHONE = "5599999999999";
-const PLANILHA_API_URL = "https://script.google.com/macros/s/AKfycbyK0CR3lS6au-z6vqWfHeNH3F0GX26BgjJlB0SRNYr7_-BmU5ns60oZpvO0HHUGNk9KGA/exec"; // <-- coloque aqui a URL do seu Apps Script (web app)
+const PLANILHA_API_URL = "https://script.google.com/macros/s/AKfycbzaAs_5qnX_I_axXnU9zTw8mIIinUl66ShD6LFLIakVB4meFuP_VvOIUww0ilyU9Tn2hQ/exec"; // <-- coloque aqui a URL do seu Apps Script (web app)
 const HOURS = ["09:00","10:30","11:30","13:00","14:30","15:30","16:30"];
 const ADMIN_PASSWORD = "aurora123";
 
@@ -343,3 +343,26 @@ function adminFreeAll() {
    INICIALIZAÇÃO
 =========================================================== */
 generateCalendars();
+
+
+
+
+
+fetch("https://script.google.com/macros/s/AKfycbzaAs_5qnX_I_axXnU9zTw8mIIinUl66ShD6LFLIakVB4meFuP_VvOIUww0ilyU9Tn2hQ/exec", {
+  method: "POST",
+  mode: "no-cors",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    date: dataSelecionada,
+    time: horarioSelecionado,
+    name: nomeCliente,
+    phone: telefoneCliente,
+    obs: observacoesCliente
+  })
+})
+.then(() => {
+  console.log("Enviado para a planilha!");
+})
+.catch(err => console.error("Erro:", err));
