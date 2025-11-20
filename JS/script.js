@@ -2,6 +2,7 @@
    CONFIGURAÇÕES DO SISTEMA
 =========================================================== */
 const PHONE = "5599999999999";
+const PLANILHA_API_URL = "https://script.google.com/macros/s/AKfycbyK0CR3lS6au-z6vqWfHeNH3F0GX26BgjJlB0SRNYr7_-BmU5ns60oZpvO0HHUGNk9KGA/exec"; // <-- coloque aqui a URL do seu Apps Script (web app)
 const HOURS = ["09:00","10:30","11:30","13:00","14:30","15:30","16:30"];
 const ADMIN_PASSWORD = "aurora123";
 
@@ -118,45 +119,135 @@ function closeHoursPanel() {
 }
 
 /* ===========================================================
-   MODAL - RESERVA (SEM ENVIO À PLANILHA)
+   UTIL - submit via hidden form+iframe (evita CORS/preflight)
+   Usa campos simples (form-urlencoded) — compatível com Apps Script
+=========================================================== */
+function submitToSheetViaForm(payload) {
+  // envia em background via form+iframe (não bloqueia UI, evita CORS)
+  return new Promise((resolve, reject) => {
+    if (!PLANILHA_API_URL || PLANILHA_API_URL.indexOf("script.google.com") === -1) {
+      console.warn("PLANILHA_API_URL não configurada corretamente.");
+      reject(new Error("API URL inválida"));
+      return;
+    }
+
+    let iframe = document.getElementById("gsheet_hidden_iframe");
+    if (!iframe) {
+      iframe = document.createElement("iframe");
+      iframe.style.display = "none";
+      iframe.name = "gsheet_hidden_iframe";
+      iframe.id = "gsheet_hidden_iframe";
+      document.body.appendChild(iframe);
+    }
+
+    const form = document.createElement("form");
+    form.action = PLANILHA_API_URL;
+    form.method = "POST";
+    form.target = iframe.name;
+    form.style.display = "none";
+    form.enctype = "application/x-www-form-urlencoded";
+
+    for (const key in payload) {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = key;
+      input.value = payload[key];
+      form.appendChild(input);
+    }
+
+    document.body.appendChild(form);
+    try {
+      form.submit();
+    } catch (e) {
+      console.warn("Erro ao submeter o form:", e);
+    }
+
+    // remover form (não podemos ler resposta do iframe por segurança)
+    setTimeout(() => {
+      try { form.remove(); } catch (e) {}
+      resolve({ status: "OK", method: "form" });
+    }, 900);
+  });
+}
+
+/* ===========================================================
+   MODAL - RESERVA
 =========================================================== */
 function openBookingModal(dateObj, hour) {
   const key = formatKey(dateObj, hour);
   const booked = loadBooked()[key];
-  if (booked) { alert("Este horário já está reservado."); return; }
+  if (booked) { alert("Este horário já está reservado e não pode ser alterado."); return; }
 
   modalRoot.style.display = "flex";
   modalRoot.setAttribute("aria-hidden", "false");
   const dateBR = formatDateBR(dateObj);
   modalTitle.textContent = `Reserva — ${dateBR} às ${hour}`;
 
-  // limpa inputs
-  document.getElementById("mname").value = "";
-  document.getElementById("mphone").value = "";
-  document.getElementById("mmsg").value = "";
+  // limpa inputs (com checagem)
+  if (document.getElementById("mname")) document.getElementById("mname").value = "";
+  if (document.getElementById("mphone")) document.getElementById("mphone").value = "";
+  if (document.getElementById("mmsg")) document.getElementById("mmsg").value = "";
 
-  document.getElementById("closeBtn").onclick = () => closeModal();
+  if (document.getElementById("closeBtn")) document.getElementById("closeBtn").onclick = () => closeModal();
 
-  document.getElementById("confirmBtn").onclick = () => {
-    const name = document.getElementById("mname").value.trim() || "—";
-    const phone = document.getElementById("mphone").value.trim() || "—";
-    const msg = document.getElementById("mmsg").value.trim() || "";
+  if (document.getElementById("localBtn")) {
+    document.getElementById("localBtn").onclick = () => {
+      const all = loadBooked();
+      all[key] = {
+        name: document.getElementById("mname").value.trim() || "—",
+        phone: document.getElementById("mphone").value.trim() || "—",
+        msg: document.getElementById("mmsg").value.trim() || "",
+        hour,
+        date: dateBR,
+        created: Date.now()
+      };
+      saveBooked(all);
+      alert("Reserva salva localmente!");
+      closeModal();
+      generateCalendars();
+      openHoursPanel(dateObj);
+    };
+  }
 
-    // salva LOCAL
-    const all = loadBooked();
-    all[key] = { name, phone, msg, hour, date: dateBR, created: Date.now() };
-    saveBooked(all);
+  if (document.getElementById("confirmBtn")) {
+    document.getElementById("confirmBtn").onclick = () => {
+      // pegando valores
+      const name = (document.getElementById("mname") && document.getElementById("mname").value.trim()) || "—";
+      const phone = (document.getElementById("mphone") && document.getElementById("mphone").value.trim()) || "—";
+      const msg = (document.getElementById("mmsg") && document.getElementById("mmsg").value.trim()) || "";
 
-    // WhatsApp
-    const text = encodeURIComponent(
-      `Reserva • Ateliê Aurora\nNome: ${name}\nTelefone: ${phone}\nData: ${dateBR}\nHorário: ${hour}\nObs: ${msg}`
-    );
-    window.open(`https://wa.me/${PHONE}?text=${text}`, "_blank");
+      const payload = {
+        nome: name,
+        telefone: phone,
+        horario: hour,
+        data: dateBR,
+        observacoes: msg
+      };
 
-    closeModal();
-    generateCalendars();
-    openHoursPanel(dateObj);
-  };
+      // --------------- ENVIO PARA PLANILHA (FIRE-AND-FORGET via form) ---------------
+      // não aguardamos aqui: enviamos em background e atualizamos UI imediatamente
+      submitToSheetViaForm(payload).catch(e => {
+        console.warn("Envio para planilha falhou (background):", e);
+        // NOTA: mesmo que falhe, já salvamos localmente para não perder a reserva
+      });
+
+      // --------------- SALVA LOCALMENTE E ATUALIZA UI IMEDIATAMENTE ---------------
+      const all = loadBooked();
+      all[formatKey(dateObj, hour)] = { name, phone, msg, hour, date: dateBR, created: Date.now() };
+      saveBooked(all);
+
+      // abre whatsapp com resumo
+      const text = encodeURIComponent(
+        `Reserva • Ateliê Aurora\nNome: ${name}\nTelefone: ${phone}\nData: ${dateBR}\nHorário: ${hour}\nObs: ${msg}`
+      );
+      window.open(`https://wa.me/${PHONE}?text=${text}`, "_blank");
+
+      // fecha modal e atualiza calendários (rápido)
+      closeModal();
+      generateCalendars();
+      openHoursPanel(dateObj);
+    };
+  }
 }
 
 function closeModal() {
@@ -165,7 +256,8 @@ function closeModal() {
 }
 
 /* ===========================================================
-   PAINEL ADMINISTRATIVO (inalterado)
+   PAINEL ADMINISTRATIVO
+   (mantenho suas funções — não alterei a lógica)
 =========================================================== */
 function adminLogin() {
   const pass = document.getElementById("adminPass").value.trim();
@@ -173,9 +265,10 @@ function adminLogin() {
     document.getElementById("adminLogin").style.display = "none";
     document.getElementById("adminPanel").style.display = "block";
     adminLoadMonths();
-  } else alert("Senha incorreta.");
+  } else {
+    alert("Senha incorreta.");
+  }
 }
-
 function adminLoadMonths() {
   const sel = document.getElementById("adminMonth");
   sel.innerHTML = "";
@@ -190,7 +283,6 @@ function adminLoadMonths() {
   sel.onchange = adminLoadDays;
   adminLoadDays();
 }
-
 function adminLoadDays() {
   const selMonth = document.getElementById("adminMonth").value;
   const selDay = document.getElementById("adminDay");
@@ -208,7 +300,6 @@ function adminLoadDays() {
   }
   adminLoadHours();
 }
-
 function adminLoadHours() {
   const selHour = document.getElementById("adminHour");
   selHour.innerHTML = "";
@@ -224,7 +315,6 @@ function adminLoadHours() {
     selHour.appendChild(opt);
   });
 }
-
 function adminFreeSelected() {
   const selHours = Array.from(document.getElementById("adminHour").selectedOptions).map(o => o.value);
   if (selHours.length === 0) { alert("Selecione pelo menos 1 horário."); return; }
@@ -237,7 +327,6 @@ function adminFreeSelected() {
   adminLoadHours();
   generateCalendars();
 }
-
 function adminFreeAll() {
   if (!confirm("Liberar TODOS os horários deste dia?")) return;
   const [y, m] = document.getElementById("adminMonth").value.split("-").map(Number);
@@ -254,32 +343,3 @@ function adminFreeAll() {
    INICIALIZAÇÃO
 =========================================================== */
 generateCalendars();
-
-
-
-async function salvarAgendamento(dados) {
-    const { error } = await supabase
-        .from("agendamentos")
-        .insert([{
-            nome: dados.nome,
-            telefone: dados.telefone,
-            data: dados.data,
-            horario: dados.horario,
-            status: "ocupado"
-        }]);
-
-    if (error) {
-        console.error("Erro ao salvar:", error);
-        alert("Erro ao salvar agendamento!");
-        return false;
-    }
-
-    return true;
-}
-
-
-
-
-
-
-
