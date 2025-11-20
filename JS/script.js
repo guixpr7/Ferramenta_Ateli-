@@ -348,49 +348,4 @@ generateCalendars();
 
 
 
-//fetch("https://script.google.com/macros/s/AKfycbzaAs_5qnX_I_axXnU9zTw8mIIinUl66ShD6LFLIakVB4meFuP_VvOIUww0ilyU9Tn2hQ/exec", {
-  method: "POST",
-  mode: "no-cors",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    date: dataSelecionada,
-    time: horarioSelecionado,
-    name: nomeCliente,
-    phone: telefoneCliente,
-    obs: observacoesCliente
-  })
-//})
-//.then(() => {
-  //console.log("Enviado para a planilha!");
-//})
-//.catch(err => console.error("Erro:", err));
 
-
-
-async function enviarParaPlanilha(dados) {
-    try {
-        const resposta = await fetch("https://script.google.com/macros/s/AKfycbzaAs_5qnX_I_axXnU9zTw8mIIinUl66ShD6LFLIakVB4meFuP_VvOIUww0ilyU9Tn2hQ/exec", {
-  method: "POST",
-  mode: "no-cors",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    date: dataSelecionada,
-    time: horarioSelecionado,
-    name: nomeCliente,
-    phone: telefoneCliente,
-    obs: observacoesCliente
-  })
-})
-.then(() => {
-  console.log("Enviado para a planilha!");
-})
-.catch(err => console.error("Erro:", err));
-    } catch (erro) {
-        console.error("Erro ao enviar para a planilha:", erro);
-        return false;
-    }
-}
