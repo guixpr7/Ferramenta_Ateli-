@@ -301,18 +301,3 @@ function salvarNaPlanilha(data, horario, nome, telefone, obs) {
 
 
 
-// Dentro do evento de clique do botão confirmar
-btnConfirmar.addEventListener('click', () => {
-    
-    // ... seus códigos de captura ...
-    let nome = document.querySelector('#seuid_nome').value;
-    let telefone = document.querySelector('#seuid_telefone').value;
-
-    // ADICIONE ISSO PARA TESTAR:
-    console.log("Tentando enviar:", nome, telefone); 
-
-    // Se aparecer "Tentando enviar: null null" ou vazio no console,
-    // seus IDs (#seuid_nome) estão errados no HTML.
-
-    salvarNaPlanilha(data, horario, nome, telefone, obs);
-});
