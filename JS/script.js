@@ -118,7 +118,7 @@ function closeHoursPanel() {
 }
 
 /* ===========================================================
-   MODAL - RESERVA (SEM ENVIO À PLANILHA)
+   MODAL - RESERVA (COM ENVIO À PLANILHA)
 =========================================================== */
 function openBookingModal(dateObj, hour) {
   const key = formatKey(dateObj, hour);
@@ -127,7 +127,7 @@ function openBookingModal(dateObj, hour) {
 
   modalRoot.style.display = "flex";
   modalRoot.setAttribute("aria-hidden", "false");
-  const dateBR = formatDateBR(dateObj);
+  const dateBR = formatDateBR(dateObj); // Ex: "03/11/2025"
   modalTitle.textContent = `Reserva — ${dateBR} às ${hour}`;
 
   // limpa inputs
@@ -137,17 +137,23 @@ function openBookingModal(dateObj, hour) {
 
   document.getElementById("closeBtn").onclick = () => closeModal();
 
+  // AQUI ESTAVA FALTANDO A CONEXÃO:
   document.getElementById("confirmBtn").onclick = () => {
     const name = document.getElementById("mname").value.trim() || "—";
     const phone = document.getElementById("mphone").value.trim() || "—";
     const msg = document.getElementById("mmsg").value.trim() || "";
 
-    // salva LOCAL
+    // 1. Salva LOCAL (LocalStorage)
     const all = loadBooked();
     all[key] = { name, phone, msg, hour, date: dateBR, created: Date.now() };
     saveBooked(all);
 
-    // WhatsApp
+    // 2. ENVIA PARA O GOOGLE SHEETS (Correção feita aqui)
+    // Estamos passando as variáveis que já temos aqui dentro: dateBR, hour, name, phone, msg
+    console.log("Enviando para planilha:", dateBR, hour, name);
+    salvarNaPlanilha(dateBR, hour, name, phone, msg);
+
+    // 3. Abre WhatsApp
     const text = encodeURIComponent(
       `Reserva • Ateliê Aurora\nNome: ${name}\nTelefone: ${phone}\nData: ${dateBR}\nHorário: ${hour}\nObs: ${msg}`
     );
@@ -165,7 +171,7 @@ function closeModal() {
 }
 
 /* ===========================================================
-   PAINEL ADMINISTRATIVO (inalterado)
+   PAINEL ADMINISTRATIVO
 =========================================================== */
 function adminLogin() {
   const pass = document.getElementById("adminPass").value.trim();
@@ -231,7 +237,19 @@ function adminFreeSelected() {
   const [y, m] = document.getElementById("adminMonth").value.split("-").map(Number);
   const d = Number(document.getElementById("adminDay").value);
   const all = loadBooked();
-  selHours.forEach(h => { const key = formatKey(new Date(y, m, d), h); delete all[key]; });
+  
+  // Cria a data formatada para enviar para a planilha (remover)
+  const dateObj = new Date(y, m, d);
+  const dateBR = formatDateBR(dateObj);
+
+  selHours.forEach(h => { 
+      const key = formatKey(dateObj, h); 
+      delete all[key]; 
+      
+      // Tenta remover da planilha também (Bônus)
+      removerDaPlanilha(dateBR, h);
+  });
+  
   saveBooked(all);
   document.getElementById("adminStatus").textContent = "Horários liberados!";
   adminLoadHours();
@@ -243,7 +261,18 @@ function adminFreeAll() {
   const [y, m] = document.getElementById("adminMonth").value.split("-").map(Number);
   const d = Number(document.getElementById("adminDay").value);
   const all = loadBooked();
-  HOURS.forEach(h => { const key = formatKey(new Date(y, m, d), h); delete all[key]; });
+  
+  const dateObj = new Date(y, m, d);
+  const dateBR = formatDateBR(dateObj);
+
+  HOURS.forEach(h => { 
+      const key = formatKey(dateObj, h); 
+      delete all[key]; 
+      
+      // Tenta remover da planilha também (Bônus)
+      removerDaPlanilha(dateBR, h);
+  });
+  
   saveBooked(all);
   document.getElementById("adminStatus").textContent = "Dia totalmente liberado!";
   adminLoadHours();
@@ -255,21 +284,10 @@ function adminFreeAll() {
 =========================================================== */
 generateCalendars();
 
-
-
-
-
-
-
-
-
-
-
-// --- INTEGRAÇÃO GOOGLE SHEETS (Adicione ao final do arquivo) ---
+// --- INTEGRAÇÃO GOOGLE SHEETS (SEU CÓDIGO ORIGINAL + REMOÇÃO) ---
 const SHEET_URL = "https://script.google.com/macros/s/AKfycbx4w5LENd7A7OO_ODK2zA3Tbh3Tvyl-Ptd2pmNuOo9k9-0nsmvymOyyzJXNw5zj_u4zKA/exec";
 
 function salvarNaPlanilha(data, horario, nome, telefone, obs) {
-    
     const payload = {
         action: "agendar",
         data: data,
@@ -278,26 +296,27 @@ function salvarNaPlanilha(data, horario, nome, telefone, obs) {
         telefone: telefone,
         obs: obs
     };
-
     fetch(SHEET_URL, {
         method: "POST",
-        mode: "no-cors", // 'no-cors' é necessário para enviar dados de forms simples sem erro de bloqueio
-        headers: {
-            "Content-Type": "application/json"
-        },
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
-    })
-    .then(response => {
-        console.log("Dados enviados para a planilha (Modo no-cors).");
-        // Aqui você pode adicionar um alert("Agendamento Salvo!") se quiser
-    })
-    .catch(error => console.error("Erro ao salvar na planilha:", error));
+    }).then(res => console.log("Agendado na planilha."))
+      .catch(err => console.error("Erro Planilha:", err));
 }
 
-
-
-
-
-
-
-
+// Função extra para o admin remover
+function removerDaPlanilha(data, horario) {
+    const payload = {
+        action: "cancelar",
+        data: data,
+        horario: horario
+    };
+    fetch(SHEET_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    }).then(res => console.log("Removido da planilha."))
+      .catch(err => console.error("Erro Planilha Remove:", err));
+}
