@@ -5,7 +5,7 @@ const ADMIN_PASSWORD = "1230";  // <<< TROQUE AQUI SUA SENHA
 const HOURS = ["09:00","10:30","11:30","13:00","14:30","15:30","16:30"];
 
 // URL DA SUA PLANILHA (Verifique se é a mesma do script.js)
-const SHEET_URL_ADMIN = "https://script.google.com/macros/s/AKfycbx4w5LENd7A7OO_ODK2zA3Tbh3Tvyl-Ptd2pmNuOo9k9-0nsmvymOyyzJXNw5zj_u4zKA/exec";
+const SHEET_URL_ADMIN = "https://script.google.com/macros/s/AKfycbz9f8k1ttaDzHKGk4w9FUABlaM9zjyi8CHdtv4yIGfv-fvpH_GexxRqAJ_F1aL0G77Dpw/exec";
 
 /* ===========================================================
     LOGIN
