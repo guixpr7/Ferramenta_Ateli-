@@ -4,6 +4,9 @@
 const ADMIN_PASSWORD = "1230";  // <<< TROQUE AQUI SUA SENHA
 const HOURS = ["09:00","10:30","11:30","13:00","14:30","15:30","16:30"];
 
+// URL DA SUA PLANILHA (Verifique se é a mesma do script.js)
+const SHEET_URL_ADMIN = "https://script.google.com/macros/s/AKfycbx4w5LENd7A7OO_ODK2zA3Tbh3Tvyl-Ptd2pmNuOo9k9-0nsmvymOyyzJXNw5zj_u4zKA/exec";
+
 /* ===========================================================
     LOGIN
 =========================================================== */
@@ -59,13 +62,20 @@ function clearSingleHour(date, hour) {
   const all = loadBooked();
   const key = `${date}_${hour}`;
 
+  // OBS: O Admin usa data YYYY-MM-DD nos inputs, mas no LocalStorage
+  // a chave pode estar diferente dependendo de como foi salva.
+  // Vamos focar em apagar da PLANILHA usando a data formatada BR.
+
+  // 1. Apaga do LocalStorage (Site)
   if (all[key]) {
     delete all[key];
     saveBooked(all);
-    alert(`Horário ${hour} liberado!`);
-  } else {
-    alert("Este horário já estava livre.");
-  }
+  } 
+  // (Mesmo que não tenha no LocalStorage, tentamos apagar da planilha por garantia)
+  
+  // 2. Apaga da Planilha Google
+  const dataFormatada = formatarDataBR(date); // Converte 2025-11-03 para 03/11/2025
+  removerDaPlanilha(dataFormatada, hour);
 }
 
 /* ===========================================================
@@ -76,24 +86,29 @@ document.getElementById("clearDayBtn").onclick = () => {
   if (!date) return alert("Selecione uma data!");
 
   const all = loadBooked();
+  const dataFormatada = formatarDataBR(date);
 
   HOURS.forEach(h => {
+    // 1. Apaga do LocalStorage
     const k = `${date}_${h}`;
     delete all[k];
+
+    // 2. Apaga da Planilha (chama para cada horário)
+    removerDaPlanilha(dataFormatada, h);
   });
 
   saveBooked(all);
-  alert("Todos os horários deste dia foram liberados!");
+  alert(`Todos os horários de ${dataFormatada} foram liberados e removidos da planilha!`);
 };
 
 /* ===========================================================
-    APAGAR TODAS AS RESERVAS
+    APAGAR TODAS AS RESERVAS (Cuidado: Isso limpa só o site)
 =========================================================== */
 document.getElementById("clearAllBtn").onclick = () => {
-  if (!confirm("Tem certeza que deseja APAGAR TODAS as reservas?")) return;
+  if (!confirm("Tem certeza que deseja APAGAR TODAS as reservas do SITE?\n(Isso não limpa a planilha inteira, apenas o site visualmente)")) return;
 
   localStorage.removeItem("atelier_booked");
-  alert("Todas as reservas foram apagadas!");
+  alert("Todas as reservas locais foram apagadas!");
 };
 
 /* ===========================================================
@@ -104,25 +119,22 @@ document.getElementById("logoutBtn").onclick = () => {
 };
 
 
+/* ===========================================================
+    FUNÇÕES AUXILIARES E INTEGRAÇÃO
+=========================================================== */
 
-
-
-
-
-
-
-
-
-
-// --- INTEGRAÇÃO GOOGLE SHEETS ADMIN (Adicione ao final do arquivo) ---
-const SHEET_URL_ADMIN = "https://script.google.com/macros/s/AKfycbx4w5LENd7A7OO_ODK2zA3Tbh3Tvyl-Ptd2pmNuOo9k9-0nsmvymOyyzJXNw5zj_u4zKA/exec";
+// Converte "2025-11-03" (Input HTML) para "03/11/2025" (Planilha)
+function formatarDataBR(dataISO) {
+    if (!dataISO) return "";
+    const partes = dataISO.split("-"); // [2025, 11, 03]
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
 
 function removerDaPlanilha(dataAgendamento, horarioAgendamento) {
-    
     const payload = {
         action: "cancelar",
-        data: dataAgendamento,     // Ex: "03/11/2025" tem que ser IGUAL ao que foi salvo
-        horario: horarioAgendamento // Ex: "09:00"
+        data: dataAgendamento,     
+        horario: horarioAgendamento 
     };
 
     fetch(SHEET_URL_ADMIN, {
@@ -134,8 +146,7 @@ function removerDaPlanilha(dataAgendamento, horarioAgendamento) {
         body: JSON.stringify(payload)
     })
     .then(response => {
-        console.log("Pedido de cancelamento enviado.");
-        alert("Agendamento removido da planilha com sucesso!");
+        console.log(`Solicitação de cancelamento enviada: ${dataAgendamento} - ${horarioAgendamento}`);
     })
     .catch(error => console.error("Erro ao remover da planilha:", error));
 }
