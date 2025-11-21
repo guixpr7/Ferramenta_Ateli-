@@ -111,3 +111,31 @@ document.getElementById("logoutBtn").onclick = () => {
 
 
 
+
+
+
+// --- INTEGRAÇÃO GOOGLE SHEETS ADMIN (Adicione ao final do arquivo) ---
+const SHEET_URL_ADMIN = "https://script.google.com/macros/s/AKfycbx4w5LENd7A7OO_ODK2zA3Tbh3Tvyl-Ptd2pmNuOo9k9-0nsmvymOyyzJXNw5zj_u4zKA/exec";
+
+function removerDaPlanilha(dataAgendamento, horarioAgendamento) {
+    
+    const payload = {
+        action: "cancelar",
+        data: dataAgendamento,     // Ex: "03/11/2025" tem que ser IGUAL ao que foi salvo
+        horario: horarioAgendamento // Ex: "09:00"
+    };
+
+    fetch(SHEET_URL_ADMIN, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(response => {
+        console.log("Pedido de cancelamento enviado.");
+        alert("Agendamento removido da planilha com sucesso!");
+    })
+    .catch(error => console.error("Erro ao remover da planilha:", error));
+}

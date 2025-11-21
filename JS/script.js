@@ -256,3 +256,40 @@ function adminFreeAll() {
 generateCalendars();
 
 
+
+
+
+
+
+
+
+
+
+// --- INTEGRAÇÃO GOOGLE SHEETS (Adicione ao final do arquivo) ---
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbx4w5LENd7A7OO_ODK2zA3Tbh3Tvyl-Ptd2pmNuOo9k9-0nsmvymOyyzJXNw5zj_u4zKA/exec";
+
+function salvarNaPlanilha(data, horario, nome, telefone, obs) {
+    
+    const payload = {
+        action: "agendar",
+        data: data,
+        horario: horario,
+        nome: nome,
+        telefone: telefone,
+        obs: obs
+    };
+
+    fetch(SHEET_URL, {
+        method: "POST",
+        mode: "no-cors", // 'no-cors' é necessário para enviar dados de forms simples sem erro de bloqueio
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(response => {
+        console.log("Dados enviados para a planilha (Modo no-cors).");
+        // Aqui você pode adicionar um alert("Agendamento Salvo!") se quiser
+    })
+    .catch(error => console.error("Erro ao salvar na planilha:", error));
+}
